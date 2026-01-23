@@ -5,13 +5,21 @@ const cors = require('cors');
 
 // --- IMPORT ROUTES ---
 const productRoutes = require('./routes/productRoutes');
-const orderRoutes = require('./routes/orders'); // <--- 1. Import the new Order routes
+const orderRoutes = require('./routes/orders'); 
 
 const app = express();
 
 // --- MIDDLEWARE ---
 app.use(express.json()); // Allows parsing JSON from incoming requests
-app.use(cors());         // Allows your React frontend to connect
+
+// --- CORS CONFIGURATION (UPDATED) ---
+app.use(cors({
+  origin: [
+    "http://localhost:5173",                    // Allows your local laptop to connect
+    "https://e-commerce-front-lake.vercel.app"  // Allows your Live Vercel site to connect
+  ],
+  credentials: true
+}));
 
 // Make the 'uploads' folder public
 app.use('/uploads', express.static('uploads')); 
@@ -23,7 +31,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/fashionstor
 
 // --- ROUTES ---
 app.use('/api/products', productRoutes);
-app.use('/api/orders', orderRoutes); // <--- 2. Enable the Order API endpoint
+app.use('/api/orders', orderRoutes); 
 
 // Simple Health Check Route
 app.get('/', (req, res) => {
