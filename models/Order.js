@@ -1,12 +1,13 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
-  // 1. LINK TO USER MODEL
+  // 1. LINK TO USER MODEL (Account Holder)
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'User', // This allows .populate('user') to work
     required: true 
   },
+  // 2. SHIPPING DETAILS (Entered at checkout)
   customer: {
     name: { type: String, required: true },
     email: { type: String, required: true },
