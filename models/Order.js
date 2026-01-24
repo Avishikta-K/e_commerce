@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
+  // 1. LINK TO USER MODEL
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true 
+  },
   customer: {
     name: { type: String, required: true },
     email: { type: String, required: true },
@@ -15,13 +21,12 @@ const orderSchema = new mongoose.Schema({
       quantity: Number,
       price: Number,
       image: String,
-      // --- NEW FIELDS ---
-      color: { type: String }, // Stores Hex Code or Name
-      size: { type: String }   // Stores S, M, L, etc.
+      color: { type: String },
+      size: { type: String }
     }
   ],
   totalAmount: { type: Number, required: true },
-  status: { type: String, default: 'Processing' }, // Processing, Shipped, Delivered
+  status: { type: String, default: 'Processing' },
   date: { type: Date, default: Date.now }
 });
 
