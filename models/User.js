@@ -15,7 +15,13 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  // --- NEW: Track Login Activity ---
+  loginHistory: [{
+    action: { type: String, enum: ['LOGIN', 'LOGOUT'] },
+    timestamp: { type: Date, default: Date.now },
+    token: String // Optional: Store the token (truncated) for reference
+  }]
 });
 
 module.exports = mongoose.model('User', userSchema);
