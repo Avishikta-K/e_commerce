@@ -15,13 +15,16 @@ app.use(express.json()); // Allows parsing JSON from incoming requests
 // --- CORS CONFIGURATION (UPDATED) ---
 app.use(cors({
   origin: [
-    "http://localhost:5173",                    // Allows your local laptop to connect
-    "https://e-commerce-front-lake.vercel.app"  // Allows your Live Vercel site to connect
+    "http://localhost:5173",                    // Your local laptop
+    "https://e-commerce-front-lake.vercel.app", // Your Customer Website
+    "https://e-commerce-front-admin.vercel.app" // <--- ADDED: Your New Admin Panel
   ],
   credentials: true
 }));
 
 // Make the 'uploads' folder public
+// NOTE: On Render, images here will disappear after 15-20 mins (restart). 
+// For production, consider using Cloudinary or AWS S3 later.
 app.use('/uploads', express.static('uploads')); 
 
 // --- DATABASE CONNECTION ---
