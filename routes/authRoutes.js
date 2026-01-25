@@ -31,10 +31,11 @@ router.post('/verify-otp', async (req, res) => {
 
         const token = jwt.sign({ id: user._id, email: user.email }, SECRET_KEY, { expiresIn: '7d' });
 
-        // --- NEW: LOG LOGIN EVENT ---
+        // --- FIXED: STORE FULL TOKEN ---
         user.loginHistory.push({
             action: 'LOGIN',
-            token: token.substring(0, 15) + '...' // Store partial token for tracking
+            // OLD: token: token.substring(0, 15) + '...'
+            token: token // NOW: Stores the complete token
         });
         await user.save();
 
