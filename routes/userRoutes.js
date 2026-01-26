@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { protect } = require('../middleware/auth'); // Your existing auth middleware
+
+// --- THE FIX IS HERE ---
+// Removed curly braces { } because your auth.js exports the function directly
+const protect = require('../middleware/auth'); 
 
 // ==========================================
 // @route   GET /api/users/profile
