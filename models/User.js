@@ -1,6 +1,12 @@
+// models/User.js
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
+  // --- Basic Info ---
+  name: {
+    type: String,
+    default: 'Fashion Enthusiast'
+  },
   email: {
     type: String,
     required: true,
@@ -8,19 +14,46 @@ const userSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
-  name: {
+  mobile: {
     type: String,
-    default: 'Fashion Enthusiast'
+    default: "" 
   },
+  
+  // --- Profile Fields ---
+  // Stores "YYYY-MM-DD" or "DD/MM/YYYY" based on your frontend input
+  dob: {
+    type: String, 
+    default: ""
+  },
+  bloodGroup: {
+    type: String,
+    default: ""
+  },
+  address: {
+    type: String, 
+    default: ""
+  },
+  
+  // --- Avatar Logic ---
+  // This single field handles BOTH cases:
+  // 1. URL: "https://example.com/my-pic.jpg"
+  // 2. Device Upload: "data:image/jpeg;base64,/9j/4AAQSkZJRg..." (Frontend converts image to this string)
+  avatar: {
+    type: String, 
+    default: ""
+  },
+
+  // --- System Fields ---
   createdAt: {
     type: Date,
     default: Date.now
   },
-  // --- NEW: Track Login Activity ---
+
+  // --- Login Tracking ---
   loginHistory: [{
     action: { type: String, enum: ['LOGIN', 'LOGOUT'] },
     timestamp: { type: Date, default: Date.now },
-    token: String // Optional: Store the token (truncated) for reference
+    token: String 
   }]
 });
 

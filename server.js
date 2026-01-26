@@ -6,7 +6,8 @@ const cors = require('cors');
 // --- IMPORT ROUTES ---
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orders'); 
-const authRoutes = require('./routes/authRoutes'); // <--- 1. NEW IMPORT
+const authRoutes = require('./routes/authRoutes'); 
+const userRoutes = require('./routes/userRoutes'); // <--- 1. NEW IMPORT FOR PROFILE
 
 const app = express();
 
@@ -27,7 +28,6 @@ app.use(cors({
 app.use('/uploads', express.static('uploads')); 
 
 // --- DATABASE CONNECTION ---
-// This uses your secure MONGO_URI from Render environment variables
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected Successfully'))
   .catch(err => console.log('❌ MongoDB Connection Error:', err));
@@ -35,7 +35,8 @@ mongoose.connect(process.env.MONGO_URI)
 // --- ROUTES ---
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes); 
-app.use('/api', authRoutes); // <--- 2. ACTIVATE AUTH ROUTES (This enables /api/login)
+app.use('/api', authRoutes); 
+app.use('/api/users', userRoutes); // <--- 2. ACTIVATE USER ROUTES (Enables /api/users/profile)
 
 // Simple Health Check Route
 app.get('/', (req, res) => {
