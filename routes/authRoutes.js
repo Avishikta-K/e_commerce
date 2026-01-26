@@ -9,7 +9,9 @@ const SECRET_KEY = process.env.JWT_SECRET || "your_super_long_secret_key_fashion
 
 // 1. LOGIN ROUTE (Generate OTP)
 router.post('/login', async (req, res) => {
-    const { email } = req.body;
+    // ⚠️ FIX: Force lowercase to ensure same account is found every time
+    const email = req.body.email ? req.body.email.toLowerCase() : null;
+    
     if (!email) return res.status(400).json({ message: "Email required" });
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
@@ -21,15 +23,18 @@ router.post('/login', async (req, res) => {
 
 // 2. VERIFY ROUTE (Login & Log History)
 router.post('/verify-otp', async (req, res) => {
-    const { email, otp } = req.body;
+    // ⚠️ FIX: Force lowercase
+    const email = req.body.email ? req.body.email.toLowerCase() : null;
+    const { otp } = req.body;
 
     if (otpStore[email] === otp) {
         let user = await User.findOne({ email });
         if (!user) {
+            // Create new user if not exists
             user = new User({ email });
         }
 
-        // --- FIXED: Use _id (underscore) to match User Routes ---
+        // Create token with _id to match userRoutes
         const token = jwt.sign(
             { _id: user._id, email: user.email }, 
             SECRET_KEY, 
@@ -61,7 +66,7 @@ router.post('/verify-otp', async (req, res) => {
 
 // 3. LOGOUT ROUTE
 router.post('/logout', async (req, res) => {
-    const { email } = req.body;
+    const email = req.body.email ? req.body.email.toLowerCase() : null;
     try {
         if (email) {
             const user = await User.findOne({ email });

@@ -7,12 +7,14 @@ const cors = require('cors');
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orders'); 
 const authRoutes = require('./routes/authRoutes'); 
-const userRoutes = require('./routes/userRoutes'); // <--- 1. NEW IMPORT FOR PROFILE
+const userRoutes = require('./routes/userRoutes'); 
 
 const app = express();
 
-// --- MIDDLEWARE ---
-app.use(express.json()); // Allows parsing JSON from incoming requests
+// --- MIDDLEWARE (UPDATED) ---
+// ⚠️ FIX: Increased limit to 50mb so Profile Images don't crash the server
+app.use(express.json({ limit: '50mb' })); 
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // --- CORS CONFIGURATION ---
 app.use(cors({
@@ -36,7 +38,7 @@ mongoose.connect(process.env.MONGO_URI)
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes); 
 app.use('/api', authRoutes); 
-app.use('/api/users', userRoutes); // <--- 2. ACTIVATE USER ROUTES (Enables /api/users/profile)
+app.use('/api/users', userRoutes); 
 
 // Simple Health Check Route
 app.get('/', (req, res) => {
