@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 
 // 1. MATCHING SECRET KEY LOGIC
-// We must use the exact same logic as authRoutes.js to ensure keys match
 const SECRET_KEY = process.env.JWT_SECRET || "your_super_long_secret_key_fashion_store_2026";
 
 module.exports = function(req, res, next) {
@@ -15,10 +14,8 @@ module.exports = function(req, res, next) {
 
   // 4. Verify token
   try {
-    // Use the SECRET_KEY constant defined above, NOT just process.env
     const decoded = jwt.verify(token, SECRET_KEY);
-    
-    req.user = decoded; // Attach user payload (id, email) to request
+    req.user = decoded; // Attach decoded payload (will now contain _id)
     next();
   } catch (err) {
     res.status(401).json({ message: 'Token is not valid' });

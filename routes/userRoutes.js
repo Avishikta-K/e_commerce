@@ -2,18 +2,15 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-// --- THE FIX IS HERE ---
-// Removed curly braces { } because your auth.js exports the function directly
+// Remove curly braces because auth.js exports function directly
 const protect = require('../middleware/auth'); 
 
 // ==========================================
 // @route   GET /api/users/profile
-// @desc    Get current user's profile details
-// @access  Private
 // ==========================================
 router.get('/profile', protect, async (req, res) => {
   try {
-    // Find user by ID attached to request by 'protect' middleware
+    // req.user._id now works because we fixed the signing in authRoutes
     const user = await User.findById(req.user._id).select('-password');
 
     if (user) {
@@ -25,7 +22,7 @@ router.get('/profile', protect, async (req, res) => {
         dob: user.dob,
         bloodGroup: user.bloodGroup,
         address: user.address,
-        avatar: user.avatar, // Returns URL or Base64 string
+        avatar: user.avatar, 
         createdAt: user.createdAt
       });
     } else {
@@ -39,32 +36,26 @@ router.get('/profile', protect, async (req, res) => {
 
 // ==========================================
 // @route   PUT /api/users/profile
-// @desc    Update user profile (Avatar, Info, Address)
-// @access  Private
 // ==========================================
 router.put('/profile', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
     if (user) {
-      // 1. Update Basic Fields
       user.name = req.body.name || user.name;
       user.mobile = req.body.mobile || user.mobile;
       user.dob = req.body.dob || user.dob;
       user.bloodGroup = req.body.bloodGroup || user.bloodGroup;
       user.address = req.body.address || user.address;
 
-      // 2. Update Avatar 
-      // Accepts direct URL string OR Base64 string from frontend file reader
       if (req.body.avatar) {
         user.avatar = req.body.avatar;
       }
 
-      // 3. Update Email (with Uniqueness Check)
       if (req.body.email && req.body.email !== user.email) {
         const emailExists = await User.findOne({ email: req.body.email });
         if (emailExists) {
-          return res.status(400).json({ message: 'Email already in use by another account' });
+          return res.status(400).json({ message: 'Email already in use' });
         }
         user.email = req.body.email;
       }
@@ -80,7 +71,7 @@ router.put('/profile', protect, async (req, res) => {
         bloodGroup: updatedUser.bloodGroup,
         address: updatedUser.address,
         avatar: updatedUser.avatar,
-        token: req.token // Optional: If you need to refresh token
+        // Removed broken 'token' field
       });
     } else {
       res.status(404).json({ message: 'User not found' });

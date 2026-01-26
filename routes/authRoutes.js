@@ -29,13 +29,16 @@ router.post('/verify-otp', async (req, res) => {
             user = new User({ email });
         }
 
-        const token = jwt.sign({ id: user._id, email: user.email }, SECRET_KEY, { expiresIn: '7d' });
+        // --- FIXED: Use _id (underscore) to match User Routes ---
+        const token = jwt.sign(
+            { _id: user._id, email: user.email }, 
+            SECRET_KEY, 
+            { expiresIn: '30d' }
+        );
 
-        // --- FIXED: STORE FULL TOKEN ---
         user.loginHistory.push({
             action: 'LOGIN',
-            // OLD: token: token.substring(0, 15) + '...'
-            token: token // NOW: Stores the complete token
+            token: token
         });
         await user.save();
 
@@ -44,14 +47,19 @@ router.post('/verify-otp', async (req, res) => {
         res.json({ 
             success: true, 
             token: token, 
-            user: { id: user._id, email: user.email } 
+            user: { 
+                _id: user._id, 
+                email: user.email, 
+                name: user.name,
+                avatar: user.avatar 
+            } 
         });
     } else {
         res.status(401).json({ success: false, message: "Invalid OTP" });
     }
 });
 
-// 3. LOGOUT ROUTE (Log History)
+// 3. LOGOUT ROUTE
 router.post('/logout', async (req, res) => {
     const { email } = req.body;
     try {
@@ -71,10 +79,8 @@ router.post('/logout', async (req, res) => {
 // 4. ADMIN: GET USER ACTIVITY
 router.get('/users/activity', async (req, res) => {
     try {
-        // Fetch all users and their history
         const users = await User.find({}, 'email name loginHistory').sort({ 'loginHistory.timestamp': -1 });
         
-        // Flatten into a single list of events
         let activityLog = [];
         users.forEach(user => {
             if (user.loginHistory) {
@@ -90,9 +96,7 @@ router.get('/users/activity', async (req, res) => {
             }
         });
 
-        // Sort by newest time
         activityLog.sort((a, b) => new Date(b.time) - new Date(a.time));
-
         res.json(activityLog);
     } catch (err) {
         res.status(500).json({ message: err.message });
