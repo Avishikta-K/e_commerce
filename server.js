@@ -8,11 +8,12 @@ const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orders'); 
 const authRoutes = require('./routes/authRoutes'); 
 const userRoutes = require('./routes/userRoutes'); 
+const bannerRoutes = require('./routes/banner'); // <--- NEW: Import Banner Routes
 
 const app = express();
 
-// --- MIDDLEWARE (UPDATED) ---
-// ⚠️ FIX: Increased limit to 50mb so Profile Images don't crash the server
+// --- MIDDLEWARE ---
+// Increased limit to 50mb so Profile Images/Banners don't crash the server
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -39,6 +40,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes); 
 app.use('/api', authRoutes); 
 app.use('/api/users', userRoutes); 
+app.use('/api/banners', bannerRoutes); // <--- NEW: Register Banner API
 
 // Simple Health Check Route
 app.get('/', (req, res) => {
