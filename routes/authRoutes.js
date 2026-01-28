@@ -1,79 +1,50 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
 const User = require('../models/User'); 
+const protect = require('../middleware/auth'); // Use Supabase Middleware
 
-// Temporary storage for OTPs
-const otpStore = {};
-const SECRET_KEY = process.env.JWT_SECRET || "your_super_long_secret_key_fashion_store_2026";
+// ==========================================
+// 1. LOGIN SUCCESS (Sync & Log History)
+// @desc    Called by Frontend AFTER Supabase returns success
+// ==========================================
+router.post('/login-success', protect, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        
+        if (!user) return res.status(404).json({ message: "User not found" });
 
-// 1. LOGIN ROUTE (Generate OTP)
-router.post('/login', async (req, res) => {
-    // ⚠️ FIX: Force lowercase to ensure same account is found every time
-    const email = req.body.email ? req.body.email.toLowerCase() : null;
-    
-    if (!email) return res.status(400).json({ message: "Email required" });
-
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    otpStore[email] = otp;
-
-    console.log(`[AUTH] OTP for ${email}: ${otp}`);
-    res.json({ success: true, message: "OTP sent", code: otp });
-});
-
-// 2. VERIFY ROUTE (Login & Log History)
-router.post('/verify-otp', async (req, res) => {
-    // ⚠️ FIX: Force lowercase
-    const email = req.body.email ? req.body.email.toLowerCase() : null;
-    const { otp } = req.body;
-
-    if (otpStore[email] === otp) {
-        let user = await User.findOne({ email });
-        if (!user) {
-            // Create new user if not exists
-            user = new User({ email });
-        }
-
-        // Create token with _id to match userRoutes
-        const token = jwt.sign(
-            { _id: user._id, email: user.email }, 
-            SECRET_KEY, 
-            { expiresIn: '30d' }
-        );
-
+        // Record the Login Event
         user.loginHistory.push({
             action: 'LOGIN',
-            token: token
+            token: req.headers.authorization.split(' ')[1] // Log the Supabase token
         });
+        
         await user.save();
 
-        delete otpStore[email];
-
+        // Return the profile data (Just like /profile did)
         res.json({ 
             success: true, 
-            token: token, 
             user: { 
                 _id: user._id, 
                 email: user.email, 
-                name: user.name,
+                name: user.name, 
                 avatar: user.avatar 
             } 
         });
-    } else {
-        res.status(401).json({ success: false, message: "Invalid OTP" });
+    } catch (err) {
+        res.status(500).json({ message: "Login Sync Error" });
     }
 });
 
-// 3. LOGOUT ROUTE
-router.post('/logout', async (req, res) => {
-    const email = req.body.email ? req.body.email.toLowerCase() : null;
+// ==========================================
+// 2. LOGOUT ROUTE
+// ==========================================
+router.post('/logout', protect, async (req, res) => {
     try {
-        if (email) {
-            const user = await User.findOne({ email });
-            if (user) {
-                user.loginHistory.push({ action: 'LOGOUT' });
-                await user.save();
-            }
+        const user = await User.findById(req.user._id);
+        if (user) {
+            user.loginHistory.push({ action: 'LOGOUT' });
+            await user.save();
         }
         res.json({ success: true, message: "Logged out successfully" });
     } catch (err) {
@@ -81,9 +52,12 @@ router.post('/logout', async (req, res) => {
     }
 });
 
-// 4. ADMIN: GET USER ACTIVITY
+// ==========================================
+// 3. ADMIN: GET USER ACTIVITY
+// ==========================================
 router.get('/users/activity', async (req, res) => {
     try {
+        // Fetch all users and their history
         const users = await User.find({}, 'email name loginHistory').sort({ 'loginHistory.timestamp': -1 });
         
         let activityLog = [];
@@ -101,6 +75,7 @@ router.get('/users/activity', async (req, res) => {
             }
         });
 
+        // Sort by newest time
         activityLog.sort((a, b) => new Date(b.time) - new Date(a.time));
         res.json(activityLog);
     } catch (err) {
