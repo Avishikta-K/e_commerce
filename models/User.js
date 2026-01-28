@@ -2,6 +2,14 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
+  // --- LINK TO SUPABASE (NEW) ---
+  // This ID comes from Supabase and permanently links the Auth user to this Mongo profile
+  supabaseId: {
+    type: String,
+    unique: true,
+    // We don't make it 'required: true' immediately so legacy users (if any) don't break
+  },
+
   // --- Basic Info ---
   name: {
     type: String,
