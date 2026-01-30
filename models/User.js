@@ -20,7 +20,6 @@ const userSchema = new mongoose.Schema({
   },
   
   // --- Profile Fields ---
-  // Stores "YYYY-MM-DD" or "DD/MM/YYYY" based on your frontend input
   dob: {
     type: String, 
     default: ""
@@ -35,9 +34,6 @@ const userSchema = new mongoose.Schema({
   },
   
   // --- Avatar Logic ---
-  // This single field handles BOTH cases:
-  // 1. URL: "https://example.com/my-pic.jpg"
-  // 2. Device Upload: "data:image/jpeg;base64,/9j/4AAQSkZJRg..." (Frontend converts image to this string)
   avatar: {
     type: String, 
     default: ""
@@ -49,12 +45,15 @@ const userSchema = new mongoose.Schema({
     default: Date.now
   },
 
-  // --- Login Tracking ---
-  loginHistory: [{
-    action: { type: String, enum: ['LOGIN', 'LOGOUT'] },
-    timestamp: { type: Date, default: Date.now },
-    token: String 
-  }]
+  // --- Login Tracking (FIXED) ---
+  loginHistory: {
+    type: [{
+      action: { type: String, enum: ['LOGIN', 'LOGOUT'] },
+      timestamp: { type: Date, default: Date.now },
+      token: String 
+    }],
+    default: [] // <--- CRITICAL FIX: Ensures this is always an array, preventing crashes
+  }
 });
 
 module.exports = mongoose.model('User', userSchema);
