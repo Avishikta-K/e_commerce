@@ -7,7 +7,9 @@ const User = require('../models/User');
 const otpStore = {};
 const SECRET_KEY = process.env.JWT_SECRET || "your_super_long_secret_key_fashion_store_2026";
 
+// ==========================================
 // 1. LOGIN ROUTE (Generate OTP)
+// ==========================================
 router.post('/login', async (req, res) => {
     try {
         // Force lowercase to ensure same account is found every time
@@ -26,7 +28,9 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// ==========================================
 // 2. VERIFY ROUTE (Login & Log History)
+// ==========================================
 router.post('/verify-otp', async (req, res) => {
     try {
         // Force lowercase
@@ -37,11 +41,14 @@ router.post('/verify-otp', async (req, res) => {
             return res.status(400).json({ success: false, message: "Email and OTP required" });
         }
 
+        console.log(`[AUTH] Verifying: ${email} with OTP: ${otp}`);
+
         if (otpStore[email] === otp) {
             let user = await User.findOne({ email });
             
+            // If user doesn't exist, create them
             if (!user) {
-                // Create new user if not exists
+                console.log(`[AUTH] Creating new user: ${email}`);
                 user = new User({ email });
             }
 
@@ -52,14 +59,16 @@ router.post('/verify-otp', async (req, res) => {
                 { expiresIn: '30d' }
             );
 
-            // --- SAFELY UPDATE HISTORY ---
-            // Even with the model fix, we double-check here to prevent crashes on old data
-            if (!user.loginHistory) {
+            // --- CRITICAL FIX FOR 500 ERROR ---
+            // If loginHistory is undefined (old account) or null, make it an empty array
+            if (!user.loginHistory || !Array.isArray(user.loginHistory)) {
                 user.loginHistory = [];
             }
 
+            // Now safely push
             user.loginHistory.push({
                 action: 'LOGIN',
+                timestamp: new Date(),
                 token: token
             });
 
@@ -68,7 +77,7 @@ router.post('/verify-otp', async (req, res) => {
             // Clear the used OTP
             delete otpStore[email];
 
-            // Return FULL profile data so frontend is up-to-date immediately
+            // Return FULL profile data
             res.json({ 
                 success: true, 
                 token: token, 
@@ -76,33 +85,43 @@ router.post('/verify-otp', async (req, res) => {
                     _id: user._id, 
                     email: user.email, 
                     name: user.name,
-                    avatar: user.avatar,
-                    mobile: user.mobile,      // Added
-                    dob: user.dob,            // Added
-                    bloodGroup: user.bloodGroup, // Added
-                    address: user.address     // Added
+                    avatar: user.avatar || "",
+                    mobile: user.mobile || "",      
+                    dob: user.dob || "",            
+                    bloodGroup: user.bloodGroup || "", 
+                    address: user.address || ""     
                 } 
             });
         } else {
             res.status(401).json({ success: false, message: "Invalid OTP" });
         }
     } catch (error) {
-        console.error("VERIFY OTP ERROR:", error); 
-        res.status(500).json({ success: false, message: "Server error verifying OTP" });
+        console.error("❌ VERIFY OTP SERVER ERROR:", error);
+        
+        // Handle "Duplicate Key" error (Race condition)
+        if (error.code === 11000) {
+            return res.status(409).json({ success: false, message: "User conflict. Please try again." });
+        }
+
+        res.status(500).json({ success: false, message: "Server error verifying OTP", error: error.message });
     }
 });
 
+// ==========================================
 // 3. LOGOUT ROUTE
+// ==========================================
 router.post('/logout', async (req, res) => {
     const email = req.body.email ? req.body.email.toLowerCase() : null;
     try {
         if (email) {
             const user = await User.findOne({ email });
             if (user) {
-                // Safety check
-                if (!user.loginHistory) user.loginHistory = [];
+                // Safety check before push
+                if (!Array.isArray(user.loginHistory)) {
+                    user.loginHistory = [];
+                }
                 
-                user.loginHistory.push({ action: 'LOGOUT' });
+                user.loginHistory.push({ action: 'LOGOUT', timestamp: new Date() });
                 await user.save();
             }
         }
@@ -113,7 +132,9 @@ router.post('/logout', async (req, res) => {
     }
 });
 
+// ==========================================
 // 4. ADMIN: GET USER ACTIVITY
+// ==========================================
 router.get('/users/activity', async (req, res) => {
     try {
         const users = await User.find({}, 'email name loginHistory').sort({ 'loginHistory.timestamp': -1 });

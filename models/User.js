@@ -1,4 +1,3 @@
-// models/User.js
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
@@ -52,7 +51,7 @@ const userSchema = new mongoose.Schema({
       timestamp: { type: Date, default: Date.now },
       token: String 
     }],
-    default: [] // <--- CRITICAL FIX: Ensures this is always an array, preventing crashes
+    default: [] // <--- CRITICAL FIX: Ensures this is always an array
   }
 });
 
